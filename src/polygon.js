@@ -1,3 +1,5 @@
+import { onGround } from "./game";
+
 export class Polygon {
     constructor(vertices) {
         this.vertices = vertices;
@@ -28,39 +30,79 @@ export class Polygon {
     }
 
     lineRect(x1, y1, x2, y2, rx, ry, rw, rh) {
+        let onGroundState;
+        onGround.subscribe(value => { onGroundState = value; })();
+
         // Check if the line has hit any of the rectangle's sides
         // Uses the lineLine function below
-        const left = this.lineLine(x1, y1, x2, y2, rx, ry, rx, ry + rh);
-        const right = this.lineLine(x1, y1, x2, y2, rx + rw, ry, rx + rw, ry + rh);
+        const bottomCollision = this.lineLine(x1, y1, x2, y2, rx, ry + rh - 5, rx + rw, ry + rh - 5);
+        const left = this.lineLine(x1, y1, x2, y2, rx, ry - 5, rx, ry + rh - 5);
+        const right = this.lineLine(x1, y1, x2, y2, rx + rw, ry - 5, rx + rw, ry + rh - 5);
         const top = this.lineLine(x1, y1, x2, y2, rx, ry, rx + rw, ry);
         const bottom = this.lineLine(x1, y1, x2, y2, rx, ry + rh, rx + rw, ry + rh);
 
         // If ANY of the above are true,
         // the line has hit the rectangle
-        if (left || right || top || bottom) {
+        if (bottom || bottomCollision) {
+            console.log("bottom collision")
+            if (!onGroundState) {
+                onGround.set(true);
+            }
             return true;
+        } else if (left) {
+            console.log("left collision");
+            return true;
+        } else if (right) {
+            console.log("right collision")
+            return true;
+        } else if (top) {
+            console.log("top collision")
+            return true;
+        } else {
+            if(onGroundState) {
+                onGround.set(false)
+            }
         }
 
         return false;
     }
 
     lineLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+        // Calculate the denominator for the line intersection equation
         const denominator = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-    
+      
+        // Check if the lines are parallel
         if (denominator === 0) {
-            // Lines are parallel, they won't intersect
-            return false;
+          // Check if the x or y values fall within a certain range to consider them as intersecting
+          const range = 2; // Adjust the range value as needed
+      
+          if (
+            (Math.abs(x1 - x3) <= range && Math.abs(y1 - y3) <= range) ||
+            (Math.abs(x2 - x3) <= range && Math.abs(y2 - y3) <= range)
+          ) {
+            // Lines are parallel and x or y values fall within the range
+            return true;
+          }
+      
+          // Lines are parallel but x or y values do not fall within the range
+          return false;
         }
-    
+      
+        // Calculate the parameters uA and uB for the intersection points
         const uA = ((x4 - x3) * (y1 - y3) + (y4 - y3) * (x3 - x1)) / denominator;
         const uB = ((x2 - x1) * (y1 - y3) + (y2 - y1) * (x3 - x1)) / denominator;
-    
+      
+        // Check if the intersection points are within the valid range (0 to 1)
         if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
-            return true;
+          // Lines intersect within the valid range
+          return true;
         }
-    
+      
+        // Lines do not intersect within the valid range
         return false;
-    }
+      }
+      
+      
 
     polyRect(rx, ry, rw, rh) {
         // Check if the bounding boxes intersect
@@ -90,7 +132,7 @@ export class Polygon {
 
             // Check against all four sides of the rectangle
             const collision = this.lineRect(vc.x, vc.y, vn.x, vn.y, rx, ry, rw, rh);
-            if (collision) return true;
+            if (collision) return true; false
         }
 
         return false;
