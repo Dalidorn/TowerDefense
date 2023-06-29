@@ -1,4 +1,6 @@
 /node_modules/
 /public/build/
+/Old_iteration_1/
+/Second_iteration/
 
 .DS_Store

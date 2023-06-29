@@ -9,13 +9,11 @@
         calculatePlayerMovement,
         checkCollisions,
         keys,
-        startGameLoop
     } from "./game.js";
 
     let canvas;
     let ctx;
     let animationFrameId;
-    let previousTimestamp;
 
     onMount(() => {
         ctx = canvas.getContext("2d");
@@ -25,7 +23,6 @@
 
         const vertices = generateBottomRectangleVertices(); // Generate rectangle vertices
         addPlatform(vertices); // Add the rectangle platform
-        startGameLoop();
     });
 
     onDestroy(() => {
@@ -34,19 +31,15 @@
         window.removeEventListener("keyup", keyupHandler);
     });
 
-    function frame(timestamp) {
-    if (previousTimestamp) {
-        const deltaTime = timestamp - previousTimestamp;
-        const { dx, dy } = calculatePlayerMovement(deltaTime);
+    function frame() {
+        const { dx, dy } = calculatePlayerMovement();
         movePlayer(dx, dy);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        draw();
+
+        animationFrameId = requestAnimationFrame(frame);
     }
-
-    previousTimestamp = timestamp;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    draw();
-
-    animationFrameId = requestAnimationFrame(frame);
-}
 
     function keydownHandler(e) {
         if (e.key == "w") keys.update((state) => ({ ...state, w: true }));
